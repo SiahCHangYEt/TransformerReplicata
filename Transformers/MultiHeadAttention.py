@@ -14,7 +14,7 @@ class MultiHeadAttention(nn.Module):
         #W_O
         self.out_proj = nn.Linear(d_model, d_model)
 
-    def forward(self,q,k,v,mask=None,return_attn=False):
+    def forward(self,q,k,v,mask=None,kv_cache=None,return_attn=False):
         batch_size = q.size(0)
         q_seq_len = q.size(1)
         k_seq_len = k.size(1)
@@ -24,6 +24,11 @@ class MultiHeadAttention(nn.Module):
         q = q.view(batch_size, q_seq_len, self.number_of_heads, self.d_k).transpose(1, 2)
         k = k.view(batch_size, k_seq_len, self.number_of_heads, self.d_k).transpose(1, 2)
         v = v.view(batch_size, k_seq_len, self.number_of_heads, self.d_k).transpose(1, 2)
+        if kv_cache is not None:
+            prev_k, prev_v = kv_cache
+            k = torch.cat((prev_k, k), dim=2)
+            v = torch.cat((prev_v, v), dim=2)
+        new_kv_cache = (k, v)
         scores = torch.matmul(q,k.transpose(-2,-1))/math.sqrt(self.d_k)
         if mask is not None:
             # Guarantee mask is boolean and broadcastable:
@@ -44,8 +49,8 @@ class MultiHeadAttention(nn.Module):
         output = self.out_proj(context)
 
         if return_attn:
-            return output, attn_weights
-        return output
+            return output, new_kv_cache, attn_weights
+        return output, new_kv_cache
 
 
 

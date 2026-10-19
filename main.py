@@ -4,7 +4,7 @@ from Embedding.Embeddings import TransformerEmbedding
 from Transformers.PositionalEncoding import PositionalEncoding
 from Encoder import TransformerEncoder
 from Decoder import TransformerDecoder
-
+from Pipeline import MiniGPT
 
 def build_causal_mask(seq_len: int, device: torch.device) -> torch.Tensor:
     # Generates a lower-triangular boolean mask: shape (1, 1, seq_len, seq_len)
@@ -111,4 +111,22 @@ def run_full_pipeline_test():
 
 
 if __name__ == "__main__":
-    run_full_pipeline_test()
+    import torch
+    import torch.nn as nn
+
+    # Define an embedding matrix for a vocabulary of 5 words, each represented by a 3-dim vector
+    embed = nn.Embedding(num_embeddings=5, embedding_dim=3)
+
+    # View the randomly initialized learnable weights
+    print("Initial Weights:\n", embed.weight.data)
+
+    # Input: Batch of 2 sentences, each with 3 tokens (Indices must be integers / LongTensor)
+    input_indices = torch.tensor([[1, 2, 4],
+                                  [4, 3, 0]], dtype=torch.long)
+
+    # Forward pass: Extract vectors corresponding to the indices
+    output = embed(input_indices)
+
+    print("\nOutput Shape:", output.shape)  # Expected: [2, 3, 3] -> (batch_size, seq_len, embedding_dim)
+    print("\nOutput Tensors:\n", output)
+

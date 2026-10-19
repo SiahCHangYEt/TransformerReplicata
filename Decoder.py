@@ -49,12 +49,12 @@ class CasualDecoderLayer(nn.Module):
         self.norm_2 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None, kv_cache: tuple = None) -> torch.Tensor:
         # Sub-layer 1: Causal Masked Attention
         norm_x = self.norm_1(x)
-        x = x + self.dropout(self.self_attn(norm_x, norm_x, norm_x, mask=mask))
-
+        attn_out, new_kv_cache = x + self.dropout(self.self_attn(norm_x, norm_x, norm_x, mask=mask,kv_cache=kv_cache))
+        x = x + self.dropout(attn_out)
         # Sub-layer 2: Feed-Forward
         norm_x = self.norm_2(x)
         x = x + self.dropout(self.ffn(norm_x))
-        return x
+        return x, new_kv_cache

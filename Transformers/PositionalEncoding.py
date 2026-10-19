@@ -12,10 +12,11 @@ class PositionalEncoding(nn.Module):
 
         self.register_buffer('pe', pe.unsqueeze(0))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, start_pos:int = 0) -> torch.Tensor:
         # x shape: [batch_size, seq_len, d_model]
         # Add positional encoding to the input embeddings
-        x = x + self.pe[:, :x.size(1)]
+        seq_len = x.size(1)
+        x = x + self.pe[:, start_pos:start_pos + seq_len]
         return x
 
     def  print(self):
