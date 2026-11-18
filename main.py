@@ -107,26 +107,19 @@ def run_full_pipeline_test():
         print(f"Max difference at past positions (0 and 1): {diff:.6e}")
         assert diff < 1e-5, f"Causal mask leaked future information! Diff: {diff}"
 
-
+        gpt = MiniGPT(vocab_size, d_model=64, n_head=4, d_ff=128, num_layers=2)
+        gpt.eval()
+        prompt = "the cat"
+        prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
+        out_ids = gpt.generate(
+            prompt_ids=prompt_ids,
+            max_new_tokens=10,
+            eos_token_id=tokenizer.eos_token_id,
+            temperature=0.0  # Greedy decoding
+        )
+        print("Generated Token IDs:", out_ids)
+        print("Generated Text:", tokenizer.decode(out_ids))
 
 
 if __name__ == "__main__":
-    import torch
-    import torch.nn as nn
-
-    # Define an embedding matrix for a vocabulary of 5 words, each represented by a 3-dim vector
-    embed = nn.Embedding(num_embeddings=5, embedding_dim=3)
-
-    # View the randomly initialized learnable weights
-    print("Initial Weights:\n", embed.weight.data)
-
-    # Input: Batch of 2 sentences, each with 3 tokens (Indices must be integers / LongTensor)
-    input_indices = torch.tensor([[1, 2, 4],
-                                  [4, 3, 0]], dtype=torch.long)
-
-    # Forward pass: Extract vectors corresponding to the indices
-    output = embed(input_indices)
-
-    print("\nOutput Shape:", output.shape)  # Expected: [2, 3, 3] -> (batch_size, seq_len, embedding_dim)
-    print("\nOutput Tensors:\n", output)
-
+    run_full_pipeline_test()

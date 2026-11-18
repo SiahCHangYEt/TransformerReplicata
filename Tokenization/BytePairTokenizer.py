@@ -43,7 +43,7 @@ class BytePairTokenizer:
         new_ids = []
         i = 0
         while i < len(ids):
-            if i < len(ids) and pair[0] == ids[i] and pair[1] == ids[i]:
+            if i < len(ids) - 1 and ids[i] == pair[0] and ids[i + 1] == pair[1]:
                 new_ids.append(idx)
                 i += 2
             else:

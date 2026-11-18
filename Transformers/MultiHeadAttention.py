@@ -36,14 +36,6 @@ class MultiHeadAttention(nn.Module):
                 mask = mask.bool()
             scores = scores.masked_fill(~mask, -1e9)
         attn_weights = torch.softmax(scores, dim=-1)
-        # In MultiHeadAttention.py, print or inspect scores for head 0:
-        # scores[0, 0] after masked_fill:
-        print("\n--- Masked Scores (Head 0) ---")
-        print(scores[0, 0].detach())
-
-        print("\n--- Softmax Attention Weights (Head 0) ---")
-        print(attn_weights[0, 0].detach())
-
         context = torch.matmul(attn_weights,v)
         context = context.transpose(1,2).contiguous().view(batch_size,q_seq_len, self.d_model)
         output = self.out_proj(context)
@@ -51,6 +43,19 @@ class MultiHeadAttention(nn.Module):
         if return_attn:
             return output, new_kv_cache, attn_weights
         return output, new_kv_cache
+
+def block_hashes(token_ids, salt = None):
+    """Chain-hash a token sequence into per-block keys."""
+    BLOCK_SIZE = 16
+    hashes, parent = [], hash(salt)
+
+    # Only complete blocks are hashed. A partial tail block is skipped.
+    for start in range(0, len(token_ids) - BLOCK_SIZE + 1, BLOCK_SIZE):
+        block = tuple(token_ids[start:start + BLOCK_SIZE])
+        parent = hash((parent,block))
+        hashes.append(parent)
+
+    return hashes
 
 
 

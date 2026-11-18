@@ -12,14 +12,17 @@ class DecoderLayer(nn.Module):
         self.norm_1 = nn.LayerNorm(d_model)
         self.norm_2 = nn.LayerNorm(d_model)
         self.norm_3 = nn.LayerNorm(d_model)
+        self.rms_norm_1 = nn.RMSNorm(d_model)
+        self.rms_norm_2 = nn.RMSNorm(d_model)
+        self.rms_norm_3 = nn.RMSNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x:torch.Tensor,enc_output:torch.Tensor,tgt_mask:torch.Tensor = None,memory_mask:torch.Tensor = None):
         norm_x = self.norm_1(x)
-        self_attn_out = self.self_attn(norm_x,norm_x,norm_x,mask = tgt_mask)
+        self_attn_out, _ = self.self_attn(norm_x,norm_x,norm_x,mask = tgt_mask)
         x = x + self.dropout(self_attn_out)
         norm_x = self.norm_2(x)
-        cross_attn_out = self.cross_attn(q = norm_x, k = enc_output, v = enc_output, mask = memory_mask)
+        cross_attn_out, _ = self.cross_attn(q = norm_x, k = enc_output, v = enc_output, mask = memory_mask)
         x = x + self.dropout(cross_attn_out)
         norm_x = self.norm_3(x)
         ffn_out = self.ffn(norm_x)
@@ -40,19 +43,19 @@ class TransformerDecoder(nn.Module):
         logits = self.out_projection(x)
         return logits
 
-class CasualDecoderLayer(nn.Module):
+class CausalDecoderLayer(nn.Module):
     def __init__(self,d_model:int,d_ff:int,num_head:int,dropout:float = 0.1):
-        super(CasualDecoderLayer, self).__init__()
+        super(CausalDecoderLayer, self).__init__()
         self.self_attn = MultiHeadAttention(d_model,num_head)
         self.ffn = FeedForward(d_model,d_ff,dropout)
         self.norm_1 = nn.LayerNorm(d_model)
         self.norm_2 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x: torch.Tensor, mask: torch.Tensor = None, kv_cache: tuple = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None, kv_cache: tuple = None):
         # Sub-layer 1: Causal Masked Attention
         norm_x = self.norm_1(x)
-        attn_out, new_kv_cache = x + self.dropout(self.self_attn(norm_x, norm_x, norm_x, mask=mask,kv_cache=kv_cache))
+        attn_out, new_kv_cache = self.self_attn(norm_x, norm_x, norm_x, mask=mask,kv_cache=kv_cache)
         x = x + self.dropout(attn_out)
         # Sub-layer 2: Feed-Forward
         norm_x = self.norm_2(x)

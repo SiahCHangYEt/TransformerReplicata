@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from Embedding.Embeddings import TransformerEmbedding
 from Transformers.PositionalEncoding import PositionalEncoding
-from Decoder import CasualDecoderLayer
+from Decoder import CausalDecoderLayer
 
 class MiniGPT(nn.Module):
     def __init__(self, vocab_size: int, d_model: int = 128, n_head: int = 4, d_ff: int = 256, num_layers: int = 4, dropout: float = 0.1):
@@ -12,7 +12,7 @@ class MiniGPT(nn.Module):
         self.emb = TransformerEmbedding(vocab_size, d_model)
         self.pos = PositionalEncoding(d_model)
         self.layers = nn.ModuleList([
-            CasualDecoderLayer(d_model, d_ff, n_head, dropout) for _ in range(num_layers)
+            CausalDecoderLayer(d_model, d_ff, n_head, dropout) for _ in range(num_layers)
         ])
         self.final_norm = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, vocab_size, bias=False)
